@@ -2,30 +2,30 @@
 
 ## Objetivo
 
-O objetivo deste projeto é **praticar o uso de CDC (Change Data Capture)**, capturando alterações em uma base de dados PostgreSQL em tempo real e transmitindo essas mudanças para um tópico no Apache Kafka. Essa abordagem permite o rastreamento de modificações nos dados de forma eficiente e em tempo real, sendo uma técnica fundamental para integrações entre sistemas e eventos baseados em dados.
+O objetivo deste projeto é **praticar o uso de CDC (Change Data Capture)**, capturando inserção em uma base de dados PostgreSQL em tempo real e transmitindo essas mudanças para um tópico no Apache Kafka. Essa abordagem permite o rastreamento de modificações nos dados de forma eficiente e em tempo real, sendo uma técnica fundamental para integrações entre sistemas e eventos baseados em dados.
 
 ### Funcionalidade
 
-- O **producer** conecta-se ao banco de dados PostgreSQL e escuta por notificações de alterações em tempo real (via canal LISTEN).
+- O **producer** conecta-se ao banco de dados PostgreSQL e escuta por notificações de inserções em tempo real (via canal LISTEN).
 - Sempre que uma alteração é detectada, o **producer** envia a alteração para um tópico Kafka.
-- O **consumer** é responsável por consumir as mensagens desse tópico Kafka e exibir as alterações.
+- O **consumer** é responsável por consumir as mensagens desse tópico Kafka e exibir as inserções.
 
 ## Ferramentas Utilizadas
 
 1. **PostgreSQL**:
    - Banco de dados relacional utilizado para armazenar os dados.
-   - Usado o recurso **LISTEN** e **NOTIFY** para capturar mudanças em tabelas específicas.
+   - Usado o recurso **TRIGGER** e **FUNCTION** para capturar as transações
 
 2. **Apache Kafka**:
    - Sistema distribuído de streaming de eventos utilizado para processar e transmitir dados em tempo real.
-   - Utilizado para capturar eventos de mudança de dados e enviá-los para os consumidores.
+   - Utilizado para capturar eventos de inserção de dados e enviá-los para os consumidores.
 
 3. **Docker**:
    - Usado para orquestrar o Kafka e o PostgreSQL em contêineres isolados.
 
 4. **Python (confluent_kafka e psycopg2)**:
    - O **producer** e **consumer** foram desenvolvidos em Python.
-   - O **producer** envia eventos para o Kafka quando uma alteração é detectada no PostgreSQL.
+   - O **producer** envia eventos para o Kafka quando uma inserção é detectada no PostgreSQL.
    - O **consumer** consome esses eventos a partir do Kafka.
 
 ## Como Executar a Aplicação
@@ -54,7 +54,7 @@ docker-compose up
 
 ### 3. **Configuração do Banco de Dados (PostgreSQL)**
 
-1. Criar Tabelas e Canal de Notificação: No PostgreSQL, você deve criar a tabela sales e um canal de notificações para escutar mudanças.
+1. Criar Tabelas e Canal de Notificação: No PostgreSQL, você deve criar a tabela sales e um canal de notificações para escutar inserções.
 
 ````
 --step 1: Create table sales
@@ -69,7 +69,7 @@ CREATE TABLE sales(
 CREATE OR REPLACE FUNCTION notify_sales_changes() 
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Verifica se o evento é um INSERT para evitar possíveis erros
+    -- Check if the event is an INSERT to avoid possible errors
     IF TG_OP = 'INSERT' THEN
         PERFORM pg_notify('sales_channel', row_to_json(NEW)::text);
     END IF;
