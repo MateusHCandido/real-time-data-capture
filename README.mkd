@@ -1,0 +1,104 @@
+# Documentação do Projeto: **CDC (Change Data Capture) com Kafka e PostgreSQL**
+
+## Objetivo
+
+O objetivo deste projeto é **praticar o uso de CDC (Change Data Capture)**, capturando alterações em uma base de dados PostgreSQL em tempo real e transmitindo essas mudanças para um tópico no Apache Kafka. Essa abordagem permite o rastreamento de modificações nos dados de forma eficiente e em tempo real, sendo uma técnica fundamental para integrações entre sistemas e eventos baseados em dados.
+
+### Funcionalidade
+
+- O **producer** conecta-se ao banco de dados PostgreSQL e escuta por notificações de alterações em tempo real (via canal LISTEN).
+- Sempre que uma alteração é detectada, o **producer** envia a alteração para um tópico Kafka.
+- O **consumer** é responsável por consumir as mensagens desse tópico Kafka e exibir as alterações.
+
+## Ferramentas Utilizadas
+
+1. **PostgreSQL**:
+   - Banco de dados relacional utilizado para armazenar os dados.
+   - Usado o recurso **LISTEN** e **NOTIFY** para capturar mudanças em tabelas específicas.
+
+2. **Apache Kafka**:
+   - Sistema distribuído de streaming de eventos utilizado para processar e transmitir dados em tempo real.
+   - Utilizado para capturar eventos de mudança de dados e enviá-los para os consumidores.
+
+3. **Docker**:
+   - Usado para orquestrar o Kafka e o PostgreSQL em contêineres isolados.
+
+4. **Python (confluent_kafka e psycopg2)**:
+   - O **producer** e **consumer** foram desenvolvidos em Python.
+   - O **producer** envia eventos para o Kafka quando uma alteração é detectada no PostgreSQL.
+   - O **consumer** consome esses eventos a partir do Kafka.
+
+## Como Executar a Aplicação
+
+### 1. **Pré-requisitos**
+
+Antes de rodar a aplicação, certifique-se de ter os seguintes componentes instalados e configurados:
+
+- **Docker**: Para rodar Kafka e PostgreSQL.
+- **Python 3.x**: Para executar o código do producer e do consumer.
+- **Bibliotecas Python**: Instale as dependências do Python, incluindo `confluent_kafka` e `psycopg2`:
+  ```bash
+  pip install confluent_kafka psycopg2
+
+
+### 2. **Configuração e Execução do Docker**
+
+1. Docker Compose:
+- Utilize o arquivo [docker-compose.yml](/docker-compose.yml) para configurar e executar o Kafka e o PostgreSQL
+
+2. Iniciar o Docker: Execute o comando abaixo para levantar os contêiners de Kafka e PostgreSQL:
+
+````
+docker-compose up
+````
+
+### 3. **Configuração do Banco de Dados (PostgreSQL)**
+
+1. Criar Tabelas e Canal de Notificação: No PostgreSQL, você deve criar a tabela sales e um canal de notificações para escutar mudanças.
+
+````
+--step 1: Create table sales
+CREATE TABLE sales(
+    id SERIAL PRIMARY KEY,
+    customer_name VARCHAR(100),
+    amount DECIMAL(10,2),
+    sales_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Step 2: Create notify_sales_changes function
+CREATE OR REPLACE FUNCTION notify_sales_changes() 
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Verifica se o evento é um INSERT para evitar possíveis erros
+    IF TG_OP = 'INSERT' THEN
+        PERFORM pg_notify('sales_channel', row_to_json(NEW)::text);
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Step 3: Create sales_trigger trigger
+CREATE TRIGGER sales_trigger
+AFTER INSERT ON sales
+FOR EACH ROW
+EXECUTE FUNCTION notify_sales_changes();
+````
+
+### 4. **Executar as aplicações Producer e Consumer**
+
+````
+python producer.py
+python consumer.py
+````
+
+### 5. **Testar a aplicação**
+
+1. Para testar a aplicação, pode-se fazer um insert na tabela sales
+
+
+```
+INSERT INTO sales (product_name, quantity) VALUES ('Product A', 10);
+```
+
+2. Quando efetuada a inserção, pode ser verificado que nos terminais dos módulos producer e consumer, exibirão mensagem, confirmando a chegada dos dados
