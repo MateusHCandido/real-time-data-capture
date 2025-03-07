@@ -28,6 +28,3 @@ EXECUTE FUNCTION notify_sales_changes();
 
 INSERT INTO sales (customer_name, amount) VALUES ('Alice', 150.00);
 INSERT INTO sales (customer_name, amount) VALUES ('Bob', 250.00);
-
-
-

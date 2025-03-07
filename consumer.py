@@ -1,20 +1,18 @@
 from confluent_kafka import Consumer, KafkaError
 
 conf = {
-    'bootstrap.servers': 'localhost:9092',  # Replace with actual IP of the Docker host or Kafka container
+    'bootstrap.servers': 'localhost:9092',  
     'group.id': 'sales_group',
     'auto.offset.reset': 'earliest'
 }
 
 consumer = Consumer(conf)
 
-# Subscribe to the topic
 consumer.subscribe(['sales_topic'])
 
-# Loop to consume messages
 try:
     while True:
-        msg = consumer.poll(1.0)  # Waits up to 1 second for new messages
+        msg = consumer.poll(1.0)  
         if msg is None:
             continue
         if msg.error():
@@ -23,8 +21,7 @@ try:
             else:
                 print(f'Error: {msg.error()}')
         else:
-            print(f"Received message: {msg.value().decode('utf-8')}")  # Print received message
+            print(f"Received message: {msg.value().decode('utf-8')}")  
 
 finally:
-    # Close the consumer when done
     consumer.close()

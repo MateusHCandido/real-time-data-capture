@@ -3,14 +3,13 @@ import select
 from confluent_kafka import Producer
 import json
 
-# Kafka Configuration
 conf = {
-    'bootstrap.servers': 'localhost:9093',  # Use port 9093 for producer
+    'bootstrap.servers': 'localhost:9093',  
 }
 
 producer = Producer(conf)
 
-# Connect to PostgreSQL
+
 conn = psy.connect(
     dbname='sales_db',
     user='user',
@@ -22,7 +21,6 @@ conn = psy.connect(
 conn.autocommit = True
 cursor = conn.cursor()
 
-# Execute the changes into PostgreSQL
 cursor.execute("LISTEN sales_channel;")
 
 while True:
